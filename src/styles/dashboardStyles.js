@@ -1,0 +1,9 @@
+export const container = "min-h-screen font-sans text-gray-800 bg-gray-50";
+export const header = "flex items-center justify-between px-6 py-4 bg-white shadow";
+export const appName = "text-xl font-bold text-blue-600";
+export const avatar = "w-10 h-10 rounded-full border-2 border-blue-600";
+export const sidebar = "w-64 bg-white shadow-md p-4 hidden md:block";
+export const main = "flex-1 p-6 grid grid-cols-1 md:grid-cols-2 gap-6";
+export const card = "bg-white rounded-lg shadow-md p-6";
+export const button = "bg-blue-600 text-white rounded px-4 py-2 hover:bg-blue-700 transition";
+export const input = "border rounded px-4 py-2 w-full focus:outline-none focus:ring-2 focus:ring-blue-500";
