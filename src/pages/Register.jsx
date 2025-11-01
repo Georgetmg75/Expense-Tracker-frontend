@@ -23,6 +23,12 @@ export default function Register() {
 
   const handleRegister = async (e) => {
     e.preventDefault();
+
+    if (!name || !email || !password || !confirmPassword) {
+      alert("Please fill in all fields");
+      return;
+    }
+
     if (password !== confirmPassword) {
       alert("Passwords do not match");
       return;
@@ -30,9 +36,16 @@ export default function Register() {
 
     setLoading(true);
     try {
-      await API.post('/auth/register', { name, email, password });
-      navigate('/login');
+      const res = await API.post('/auth/register', { name, email, password });
+
+      if (res.status === 201 || res.status === 200) {
+        alert("Account created successfully");
+        navigate('/login');
+      } else {
+        throw new Error("Unexpected response");
+      }
     } catch (err) {
+      console.error("Registration error:", err.response?.data || err.message);
       alert(err.response?.data?.message || 'Registration failed');
     } finally {
       setLoading(false);
@@ -42,19 +55,18 @@ export default function Register() {
   return (
     <div className={container}>
       <form onSubmit={handleRegister} className={card}>
-        {/* Step 1: Logo + Title */}
         <div className="flex flex-col items-center mb-6">
           <img src={logo} alt="Logo" className="w-12 h-12 mb-2" />
           <h1 className={heading}>Expense Tracker</h1>
         </div>
 
-        {/* Step 2: Form Fields */}
         <input
           type="text"
           placeholder="Name"
           value={name}
           onChange={(e) => setName(e.target.value)}
           className={input}
+          required
         />
         <input
           type="email"
@@ -62,6 +74,7 @@ export default function Register() {
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           className={input}
+          required
         />
         <input
           type="password"
@@ -69,6 +82,7 @@ export default function Register() {
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           className={input}
+          required
         />
         <input
           type="password"
@@ -76,14 +90,13 @@ export default function Register() {
           value={confirmPassword}
           onChange={(e) => setConfirmPassword(e.target.value)}
           className={input}
+          required
         />
 
-        {/* Step 4: CTA Button */}
         <button type="submit" className={`${button} mt-2`} disabled={loading}>
           {loading ? 'Registering...' : 'Create Account'}
         </button>
 
-        {/* Step 5: Login Link */}
         <p className={linkStyle}>
           Already have an account?{' '}
           <Link to="/login" className="underline text-green-600">Log in</Link>
