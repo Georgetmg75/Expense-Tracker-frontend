@@ -38,6 +38,8 @@ export default function Register() {
     try {
       const res = await API.post('/auth/register', { name, email, password });
 
+      console.log("Registration response:", res);
+
       if (res.status === 201 || res.status === 200) {
         alert("Account created successfully");
         navigate('/login');
@@ -45,8 +47,13 @@ export default function Register() {
         throw new Error("Unexpected response");
       }
     } catch (err) {
-      console.error("Registration error:", err.response?.data || err.message);
-      alert(err.response?.data?.message || 'Registration failed');
+      console.error("Full registration error:", err);
+      const message =
+        err.response?.data?.message ||
+        err.response?.data?.error ||
+        err.message ||
+        'Registration failed';
+      alert(message);
     } finally {
       setLoading(false);
     }
