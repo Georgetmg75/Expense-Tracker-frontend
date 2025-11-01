@@ -5,7 +5,7 @@ const apiBase = import.meta.env.VITE_API_URL || 'https://expense-tracker-ecru-ch
 
 const API = axios.create({
   baseURL: apiBase,
-  timeout: 10000,
+  timeout: 30000,
 });
 
 // ✅ Attach token to every request
