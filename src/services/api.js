@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 // ✅ Use environment variable for dynamic backend URL
-const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+const apiBase = import.meta.env.VITE_API_URL || 'https://expense-tracker-ecru-chi.vercel.app/api';
 
 const API = axios.create({
   baseURL: apiBase,
