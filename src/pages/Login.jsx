@@ -29,9 +29,9 @@ export default function Login() {
     setLoading(true);
 
     try {
-      const res = await API.post('/auth/login', { email, password });
-
-      const { token, name } = res.data;
+      const res = await API.post('/api/auth/login', { email, password });
+      const { token, user } = res.data;
+      
       const avatar = getGravatarUrl(email);
 
       localStorage.setItem('token', token);
