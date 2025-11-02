@@ -22,7 +22,7 @@ export default function Landing() {
         <h1 className={`${heading} text-white text-2xl sm:text-4xl font-bold mb-4`}>
           Welcome to Expense Tracker
         </h1>
-        <p className={`${subtext} text-gray-200 text-base sm:text-lg max-w-xl mx-auto`}>
+        <p className={`${subtext} text-white text-base sm:text-lg max-w-xl mx-auto`}>
           Track your income, budget your spending, and stay financially empowered.
         </p>
 
