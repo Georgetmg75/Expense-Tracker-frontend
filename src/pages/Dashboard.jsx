@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef } from 'react';
 import API from '../services/api';
 import DashboardBuild from '../components/DashboardBuild';
-import toast from 'react-hot-toast'; // ✅ added
+import toast from 'react-hot-toast';
 
 const categories = [
   { name: 'Bills & Rechange', icon: '💡' },
@@ -69,12 +69,7 @@ export default function Dashboard() {
   useEffect(() => {
     if (!loading) {
       const timeout = setTimeout(() => {
-        API.post('/dashboard', { totalSalary, budgetTables })
-          .then(() => toast.success('Dashboard saved!'))
-          .catch(err => {
-            console.error('Failed to save dashboard:', err.message);
-            toast.error('Failed to save dashboard');
-          });
+        saveDashboard();
       }, 500);
 
       return () => clearTimeout(timeout);
@@ -191,6 +186,24 @@ export default function Dashboard() {
     });
     toast.success(`Expense deleted from ${category}`);
   };
+
+  // ✅ Manual save function
+  const saveDashboard = async () => {
+    try {
+      await API.post('/dashboard', { totalSalary, budgetTables });
+      toast.success('Dashboard saved!');
+    } catch (err) {
+      console.error('Failed to save dashboard:', err.message);
+      toast.error('Failed to save dashboard');
+    }
+  };
+
+  // ✅ Save on unmount
+  useEffect(() => {
+    return () => {
+      saveDashboard();
+    };
+  }, []);
 
   return (
     <div className="bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-100 min-h-screen transition-colors duration-300 px-4 sm:px-6">
