@@ -120,7 +120,7 @@ const DashboardBuild = forwardRef(({
           )}
 
           <div className="w-full max-w-4xl flex flex-col gap-6">
-            {Object.entries(budgetTables).map(([category, data]) => (
+            {Object.entries(budgetTables || {}).map(([category, data]) => (
               <div key={category} className="bg-white dark:bg-gray-800 shadow rounded p-4">
                 <h2 className="text-xl font-bold mb-4 flex justify-between items-center">
                   {category}
