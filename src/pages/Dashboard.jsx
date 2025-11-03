@@ -192,32 +192,26 @@ export default function Dashboard() {
   // AUTO-SAVE WITH userId (ObjectId string)
   const saveDashboard = async () => {
     try {
-      // GET userId FROM LOCALSTORAGE (MUST BE _id FROM JWT)
-      const storedUser = localStorage.getItem('user');
-      if (!storedUser) {
-        toast.error('No user data!');
+      const stored = localStorage.getItem('user');
+      if (!stored) {
+        toast.error('Login again!');
         return;
       }
-      const userData = JSON.parse(storedUser);
-      const userId = userData._id; // MUST BE STRING LIKE "670b1a2b3e4f567890123456"
+
+      const user = JSON.parse(stored);
+      const userId = user._id;
 
       if (!userId) {
-        toast.error('userId missing!');
+        console.error('USER OBJECT:', user);
+        toast.error('userId missing! Check login.');
         return;
       }
 
-      console.log('SAVING FOR userId:', userId);
-      const response = await API.post('/api/dashboard', {
-        userId, // SEND AS STRING
-        totalSalary,
-        budgetTables
-      });
-
-      toast.success('Dashboard SAVED!');
-      console.log('SAVED:', response.data);
+      console.log('SAVING WITH userId:', userId);
+      await API.post('/api/dashboard', { userId, totalSalary, budgetTables });
+      toast.success('Saved!');
     } catch (err) {
-      console.error('SAVE ERROR:', err.response?.data || err);
-      toast.error(err.response?.data?.message || 'Save failed');
+      toast.error('Save failed');
     }
   };
 

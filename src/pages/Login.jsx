@@ -19,11 +19,6 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-  const getGravatarUrl = (email) => {
-    const hash = md5(email.trim().toLowerCase());
-    return `https://www.gravatar.com/avatar/${hash}?d=identicon`;
-  };
-
   const handleLogin = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -31,21 +26,27 @@ export default function Login() {
     try {
       const res = await API.post('/api/auth/login', { email, password });
       const { token, user } = res.data;
-      
-      const avatar = getGravatarUrl(email);
 
+      // SAVE FULL USER + FORCE _id
       localStorage.setItem('token', token);
-      localStorage.setItem('user', JSON.stringify({ name: name || email.split('@')[0], avatar }));
+      localStorage.setItem('user', JSON.stringify({
+        ...user,
+        _id: user._id || user.id, // GUARANTEED _id
+        name: user.name || email.split('@')[0]
+      }));
+
+      console.log('LOGIN SUCCESS → userId:', user._id);
+      toast.success('Welcome back, Boss!');
 
       navigate('/dashboard');
     } catch (err) {
       const message = err.response?.data?.message || 'Login failed';
-      alert(message);
+      toast.error(message);
     } finally {
       setLoading(false);
     }
   };
-
+  
   return (
     <div className={container}>
       <form onSubmit={handleLogin} className={card}>
