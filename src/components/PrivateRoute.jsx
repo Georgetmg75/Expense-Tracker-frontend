@@ -7,9 +7,6 @@ export default function PrivateRoute({ children }) {
 
   useEffect(() => {
     const token = localStorage.getItem('token');
-    if (token) {
-      API.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-    }
     setIsAuthenticated(!!token);
   }, []);
 

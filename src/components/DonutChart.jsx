@@ -1,92 +1,72 @@
-// src/components/DonutChart.jsx
 import React from 'react';
 import { Doughnut } from 'react-chartjs-2';
-import {
-  Chart as ChartJS,
-  ArcElement,
-  Tooltip,
-  Legend,
-  Title // ADD THIS
-} from 'chart.js';
+import { Chart as ChartJS, ArcElement, Tooltip, Legend } from 'chart.js';
 
-// REGISTER EVERYTHING
-ChartJS.register(ArcElement, Tooltip, Legend, Title);
+ChartJS.register(ArcElement, Tooltip, Legend);
 
-export default function DonutChart({ budgetTables = {}, totalSalary = 0 }) {
+export default function DonutChart({ budgetTables, totalSalary }) {
   const categories = Object.keys(budgetTables);
-
-  if (categories.length === 0) {
-    return (
-      <div className="w-full h-72 flex items-center justify-center bg-white dark:bg-gray-800 rounded-lg shadow">
-        <p className="text-gray-500">Set a budget to see the chart!</p>
-      </div>
-    );
-  }
-
-  const expenses = categories.map(cat => {
-    const exps = budgetTables[cat]?.expenses || [];
-    return exps.reduce((sum, e) => sum + (Number(e.amount) || 0), 0);
-  });
-
-  const totalSpent = expenses.reduce((a, b) => a + b, 0);
-  if (totalSpent === 0) {
-    return (
-      <div className="w-full h-72 flex items-center justify-center bg-white dark:bg-gray-800 rounded-lg shadow">
-        <p className="text-gray-500">No expenses yet.</p>
-      </div>
-    );
-  }
+  const expenses = categories.map(cat =>
+    budgetTables[cat].expenses.reduce((sum, e) => sum + e.amount, 0)
+  );
 
   const data = {
     labels: categories,
-    datasets: [{
-      data: expenses,
-      backgroundColor: [
-        '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF',
-        '#FF9F40', '#C9CBCF', '#E7E9ED', '#36A2EB', '#FF6384'
-      ],
-      hoverOffset: 20,
-      borderWidth: 2,
-      borderColor: '#fff'
-    }]
+    datasets: [
+      {
+        data: expenses,
+        backgroundColor: [
+          '#4ade80', '#60a5fa', '#f472b6', '#facc15', '#a78bfa',
+          '#fb923c', '#34d399', '#f87171', '#c084fc', '#2dd4bf'
+        ],
+        borderWidth: 1,
+      },
+    ],
   };
 
   const options = {
     responsive: true,
     maintainAspectRatio: false,
     plugins: {
-      legend: { position: 'bottom' },
-      title: {
-        display: true,
-        text: 'Expense Breakdown',
-        color: '#333',
-        font: { size: 16 }
-      }
-    }
+      legend: {
+        position: 'right',
+        labels: {
+          color: '#888',
+          boxWidth: 12,
+          padding: 10,
+        },
+      },
+    },
   };
 
-  // CENTER TEXT PLUGIN
-  const centerPlugin = {
+  const centerText = {
     id: 'centerText',
-    beforeDraw: (chart) => {
-      const { ctx, width, height } = chart;
+    beforeDraw(chart) {
+      const { width } = chart;
+      const ctx = chart.ctx;
       ctx.save();
-      ctx.font = 'bold 20px Arial';
-      ctx.fillStyle = '#333';
+      ctx.font = 'bold 14px sans-serif';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
-      ctx.fillText(`₹${totalSalary}`, width / 2, height / 2);
-      ctx.font = '14px Arial';
-      ctx.fillStyle = '#666';
-      ctx.fillText('Salary', width / 2, height / 2 + 25);
-      ctx.restore();
-    }
+
+      const isDark = document.documentElement.classList.contains('dark');
+      ctx.fillStyle = isDark ? '#f3f4f6' : '#333';
+
+      ctx.fillText(`Total Salary: ₹${totalSalary}`, width / 2, chart.height / 2);
+    },
   };
 
   return (
-    <div className="w-full h-72 bg-white dark:bg-gray-800 rounded-lg shadow p-4">
-      <Doughnut data={data} options={options} plugins={[centerPlugin]} />
+    <div className="w-full p-2">
+      <div className="bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-100 shadow rounded p-4 transition-colors duration-300">
+        <h3 className="text-md font-semibold mb-4 text-left">Expense Distribution</h3>
+        <div className="flex flex-col md:flex-row gap-6 items-start">
+          {/* Chart */}
+          <div className="w-full md:w-2/3 h-72">
+            <Doughnut data={data} options={options} plugins={[centerText]} />
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
-////

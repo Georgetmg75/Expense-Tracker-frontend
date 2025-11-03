@@ -1,4 +1,3 @@
-// src/pages/Dashboard.jsx
 import { useEffect, useState, useRef } from 'react';
 import API from '../services/api';
 import DashboardBuild from '../components/DashboardBuild';
@@ -18,10 +17,9 @@ const categories = [
 ];
 
 export default function Dashboard() {
-  // FIXED: Real ref for forwardRef
   const dashboardRef = useRef(null);
 
-  const [user, setUser] = useState({ name: 'User', avatar: '/logo.jpg' });
+  const [user, setUser] = useState({ name: '', avatar: '' });
   const [transactions, setTransactions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [budgetTables, setBudgetTables] = useState({});
@@ -32,23 +30,13 @@ export default function Dashboard() {
   const [categoryBudgetInput, setCategoryBudgetInput] = useState('');
 
   useEffect(() => {
-    // User + Token
-    const storedUser = localStorage.getItem('user');
-    if (storedUser) {
-      try {
-        const parsed = JSON.parse(storedUser);
-        setUser({ name: parsed.name || 'User', avatar: parsed.avatar || '/logo.jpg' });
-      } catch (err) {
-        console.warn('Bad user data', err);
-      }
+    const storedUser = JSON.parse(localStorage.getItem('user'));
+    if (storedUser?.name) {
+      setUser({
+        name: storedUser.name,
+        avatar: storedUser.avatar || '/logo.jpg'
+      });
     }
-
-    const token = localStorage.getItem('token');
-    if (!token) {
-      window.location.href = '/login';
-      return;
-    }
-    API.defaults.headers.common['Authorization'] = `Bearer ${token}`;
 
     fetchTransactions();
     fetchDashboard();
@@ -61,184 +49,187 @@ export default function Dashboard() {
       const normalized = {};
       const initialForms = {};
 
-      for (const cat in raw) {
-        normalized[cat] = {
-          budget: Number(raw[cat].budget) || 0,
-          expenses: Array.isArray(raw[cat].expenses) ? raw[cat].expenses : []
+      for (const category in raw) {
+        normalized[category] = {
+          budget: raw[category].budget || 0,
+          expenses: Array.isArray(raw[category].expenses) ? raw[category].expenses : []
         };
-        initialForms[cat] = { date: '', note: '', amount: '' };
+        initialForms[category] = { date: '', note: '', amount: '' };
       }
 
-      setTotalSalary(Number(res.data.totalSalary) || 0);
+      setTotalSalary(res.data.totalSalary || 0);
       setBudgetTables(normalized);
       setExpenseForms(initialForms);
-      toast.success('Dashboard loaded!');
     } catch (err) {
-      console.error('Dashboard fetch error:', err);
-      toast.error('Failed to load data');
+      console.error('Failed to load dashboard:', err.message);
+      toast.error('Failed to load dashboard');
     }
   };
+
+  useEffect(() => {
+    if (!loading) {
+      const timeout = setTimeout(() => {
+        saveDashboard();
+      }, 500);
+
+      return () => clearTimeout(timeout);
+    }
+  }, [budgetTables, totalSalary]);
 
   const fetchTransactions = async () => {
     try {
       const res = await API.get('/api/transactions');
-      setTransactions(Array.isArray(res.data) ? res.data : []);
+      setTransactions(res.data);
     } catch (err) {
-      console.error('Transactions error:', err);
-      setTransactions([]);
+      console.error('Transaction fetch failed:', err.message);
+      toast.error('Failed to fetch transactions');
     } finally {
       setLoading(false);
     }
   };
 
-  // Auto-save
-  useEffect(() => {
-    if (!loading && Object.keys(budgetTables).length) {
-      const t = setTimeout(() => {
-        API.post('/api/dashboard', { totalSalary, budgetTables }).catch(() => {});
-      }, 800);
-      return () => clearTimeout(t);
-    }
-  }, [budgetTables, totalSalary, loading]);
-
-  // FIXED: Safe scroll
   const handleCategoryClick = (categoryName) => {
     setSelectedCategory(categoryName);
     setCategoryBudgetInput(budgetTables[categoryName]?.budget?.toString() || '');
     setTimeout(() => {
-      dashboardRef.current?.scrollToBudget?.() || window.scrollTo({ top: 600, behavior: 'smooth' });
+      dashboardRef.current?.scrollToBudget();
     }, 100);
   };
 
   const handleSetCategoryBudget = () => {
-    const value = parseFloat(categoryBudgetInput);
-    if (isNaN(value) || value < 0) {
-      toast.error('Invalid budget');
-      return;
+    const value = parseInt(categoryBudgetInput);
+    if (!isNaN(value)) {
+      setBudgetTables(prev => ({
+        ...prev,
+        [selectedCategory]: {
+          budget: value,
+          expenses: prev[selectedCategory]?.expenses || []
+        }
+      }));
+      setExpenseForms(prev => ({
+        ...prev,
+        [selectedCategory]: prev[selectedCategory] || { date: '', note: '', amount: '' }
+      }));
+      toast.success(`Budget set for ${selectedCategory}`);
+      setSelectedCategory(null);
+      setCategoryBudgetInput('');
     }
-    setBudgetTables(prev => ({
-      ...prev,
-      [selectedCategory]: {
-        budget: value,
-        expenses: prev[selectedCategory]?.expenses || []
-      }
-    }));
-    toast.success(`Budget set: ₹${value}`);
-    setSelectedCategory(null);
-    setCategoryBudgetInput('');
   };
 
   const handleDeleteCategoryBudget = (category) => {
-    setBudgetTables(prev => {
-      const updated = { ...prev };
-      delete updated[category];
-      return updated;
-    });
-    toast.success(`Deleted ${category}`);
+    const updated = { ...budgetTables };
+    delete updated[category];
+    setBudgetTables(updated);
+    toast.success(`Deleted budget for ${category}`);
   };
 
   const handleExpenseChange = (category, field, value) => {
     setExpenseForms(prev => ({
       ...prev,
-      [category]: { ...prev[category], [field]: value }
+      [category]: {
+        ...prev[category],
+        [field]: value
+      }
     }));
   };
 
   const handleExpenseAdd = (e, category) => {
     e.preventDefault();
-    const form = expenseForms[category] || {};
-    if (!form.date || !form.note || !form.amount) {
-      toast.error('Fill all fields');
-      return;
-    }
-    const amount = parseFloat(form.amount);
-    if (isNaN(amount) || amount <= 0) {
-      toast.error('Invalid amount');
-      return;
-    }
-
+    const form = expenseForms[category] || { date: '', note: '', amount: '' };
+    const newExpense = {
+      date: form.date,
+      note: form.note,
+      amount: parseInt(form.amount)
+    };
     setBudgetTables(prev => ({
       ...prev,
       [category]: {
         ...prev[category],
-        expenses: [...(prev[category]?.expenses || []), {
-          date: form.date,
-          note: form.note,
-          amount
-        }]
+        expenses: [...prev[category].expenses, newExpense]
       }
     }));
     setExpenseForms(prev => ({
       ...prev,
       [category]: { date: '', note: '', amount: '' }
     }));
-    toast.success('Expense added!');
+    toast.success(`Expense added to ${category}`);
   };
 
   const updateExpenseField = (category, index, field, value) => {
     setBudgetTables(prev => {
-      const expenses = [...(prev[category]?.expenses || [])];
-      expenses[index] = {
-        ...expenses[index],
-        [field]: field === 'amount' ? parseFloat(value) || 0 : value
+      const updatedExpenses = [...prev[category].expenses];
+      updatedExpenses[index] = {
+        ...updatedExpenses[index],
+        [field]: field === 'amount' ? parseInt(value) : value
       };
       return {
         ...prev,
-        [category]: { ...prev[category], expenses }
+        [category]: {
+          ...prev[category],
+          expenses: updatedExpenses
+        }
       };
     });
   };
 
   const handleDeleteExpense = (category, index) => {
     setBudgetTables(prev => {
-      const expenses = (prev[category]?.expenses || []).filter((_, i) => i !== index);
+      const updatedExpenses = [...prev[category].expenses];
+      updatedExpenses.splice(index, 1);
       return {
         ...prev,
-        [category]: { ...prev[category], expenses }
+        [category]: {
+          ...prev[category],
+          expenses: updatedExpenses
+        }
       };
     });
-    toast.success('Expense deleted');
+    toast.success(`Expense deleted from ${category}`);
   };
 
-  if (loading) {
-    return <div className="flex items-center justify-center min-h-screen bg-gray-100">
-      <div className="text-2xl font-bold animate-pulse">Loading...</div>
-    </div>;
-  }
+  // ✅ Manual save function
+  const saveDashboard = async () => {
+    try {
+      await API.post('/api/dashboard', { totalSalary, budgetTables });
+      toast.success('Dashboard saved!');
+    } catch (err) {
+      console.error('Failed to save dashboard:', err.message);
+      toast.error('Failed to save dashboard');
+    }
+  };
 
+  // ✅ Save on unmount
+  useEffect(() => {
+    return () => {
+      saveDashboard();
+    };
+  }, []);
 
   return (
-    <div className="min-h-screen">
-      {/* ERROR BOUNDARY AROUND DASHBOARD BUILD */}
-      <ErrorBoundary fallback={<div className="p-10 text-red-600">Dashboard Crashed! Check console.</div>}>
-        <DashboardBuild
-          ref={dashboardRef}
-          user={user}
-          categories={categories}
-          budgetTables={budgetTables}
-          totalSalary={totalSalary}
-          setTotalSalary={setTotalSalary}
-          selectedCategory={selectedCategory}
-          categoryBudgetInput={categoryBudgetInput}
-          setCategoryBudgetInput={setCategoryBudgetInput}
-          handleSetCategoryBudget={handleSetCategoryBudget}
-          handleCategoryClick={(cat) => {
-            setSelectedCategory(cat);
-            setCategoryBudgetInput(budgetTables[cat]?.budget?.toString() || '');
-            setTimeout(() => dashboardRef.current?.scrollToBudget?.(), 100);
-          }}
-          handleDeleteCategoryBudget={handleDeleteCategoryBudget}
-          expenseForms={expenseForms}
-          handleExpenseChange={handleExpenseChange}
-          handleExpenseAdd={handleExpenseAdd}
-          editState={editState}
-          setEditState={setEditState}
-          updateExpenseField={updateExpenseField}
-          handleDeleteExpense={handleDeleteExpense}
-          transactions={transactions}
-          loading={loading}
-        />
-      </ErrorBoundary>
+    <div className="bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-100 min-h-screen transition-colors duration-300 px-4 sm:px-6">
+      <DashboardBuild
+        ref={dashboardRef}
+        user={user}
+        categories={categories}
+        budgetTables={budgetTables}
+        totalSalary={totalSalary}
+        setTotalSalary={setTotalSalary}
+        selectedCategory={selectedCategory}
+        categoryBudgetInput={categoryBudgetInput}
+        setCategoryBudgetInput={setCategoryBudgetInput}
+        handleSetCategoryBudget={handleSetCategoryBudget}
+        handleCategoryClick={handleCategoryClick}
+        handleDeleteCategoryBudget={handleDeleteCategoryBudget}
+        expenseForms={expenseForms}
+        handleExpenseChange={handleExpenseChange}
+        handleExpenseAdd={handleExpenseAdd}
+        editState={editState}
+        setEditState={setEditState}
+        updateExpenseField={updateExpenseField}
+        handleDeleteExpense={handleDeleteExpense}
+        transactions={transactions}
+        loading={loading}
+      />
     </div>
   );
 }
