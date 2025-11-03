@@ -34,8 +34,8 @@ export default function Dashboard() {
     console.log('DASHBOARD USER:', user);
     console.log('userId:', user._id);
 
-    // fetchTransactions();
-    // fetchDashboard();
+    fetchTransactions();
+    fetchDashboard();
   }, []);
 
   const fetchDashboard = async () => {
