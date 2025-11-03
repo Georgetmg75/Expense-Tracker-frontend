@@ -184,28 +184,30 @@ export default function Dashboard() {
   };
 
   // AUTO-SAVE WITH userId (ObjectId string)
-  const saveDashboard = async () => {
+  const handleLogin = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+
     try {
-      const stored = localStorage.getItem('user');
-      if (!stored) {
-        toast.error('Login again!');
-        return;
-      }
+      const res = await API.post('/api/auth/login', { email, password });
+      const { token, user } = res.data;
 
-      const user = JSON.parse(stored);
-      const userId = user._id;
+      localStorage.setItem('token', token);
+      localStorage.setItem('user', JSON.stringify({
+        ...user,
+        _id: user._id || user.id,
+        name: user.name || email.split('@')[0]
+      }));
 
-      if (!userId) {
-        console.error('USER OBJECT:', user);
-        toast.error('userId missing! Check login.');
-        return;
-      }
+      console.log('LOGIN SUCCESS → userId:', user._id);
+      toast.success('Welcome back, Boss!'); // NOW WORKS
 
-      console.log('SAVING WITH userId:', userId);
-      await API.post('/api/dashboard', { userId, totalSalary, budgetTables });
-      toast.success('Saved!');
+      navigate('/dashboard');
     } catch (err) {
-      toast.error('Save failed');
+      const message = err.response?.data?.message || 'Login failed';
+      toast.error(message); // NOW WORKS
+    } finally {
+      setLoading(false);
     }
   };
 

@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import API from '../services/api';
 import md5 from 'md5';
+import toast from 'react-hot-toast'; // ADD THIS LINE
 
 import {
   container,
