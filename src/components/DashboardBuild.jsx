@@ -14,8 +14,11 @@ console.log('DashboardBuild component loaded');
 
 const DashboardBuild = forwardRef((props, ref) => {
   useEffect(() => {
-    console.log('DashboardBuild PROPS:', props);
-  }, [props]);
+    console.log('DashboardBuild LOADED');
+    console.log('totalSalary:', totalSalary);
+    console.log('budgetTables:', budgetTables);
+    console.log('categories:', categories);
+  }, [totalSalary, budgetTables, categories]);
 
   const {
     user = { name: 'User', avatar: '/logo.jpg' },
