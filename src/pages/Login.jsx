@@ -29,13 +29,21 @@ export default function Login() {
     setLoading(true);
 
     try {
-      const res = await API.post('/api/auth/login', { email, password });
+      const res = await API.post('/auth/login', { email, password }); // ← Auto-adds /api
       const { token, user } = res.data;
       
       const avatar = getGravatarUrl(email);
 
+      // SAVE DATA
       localStorage.setItem('token', token);
-      localStorage.setItem('user', JSON.stringify({ name: name || email.split('@')[0], avatar }));
+      localStorage.setItem('user', JSON.stringify({
+        name: user.name || email.split('@')[0],
+        email: user.email,
+        avatar
+      }));
+
+      // FORCE TOKEN IN API
+      API.updateAuth();
 
       navigate('/dashboard');
     } catch (err) {

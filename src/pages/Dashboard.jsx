@@ -38,6 +38,13 @@ export default function Dashboard() {
       });
     }
 
+    // REFRESH TOKEN IN INTERCEPTOR
+    const token = localStorage.getItem('token');
+    if (token) {
+      // Force interceptor to pick up latest token
+      API.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+    }
+
     fetchTransactions();
     fetchDashboard();
   }, []);
