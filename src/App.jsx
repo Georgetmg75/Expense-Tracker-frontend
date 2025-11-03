@@ -2,7 +2,7 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { useEffect } from 'react';
 import { Toaster } from 'react-hot-toast'; // ✅ added
-
+import ErrorBoundary from './components/ErrorBoundary';
 import Landing from './pages/Landing';
 import Login from './pages/Login';
 import Register from './pages/Register';
@@ -49,26 +49,24 @@ export default function App() {
       <Router>
         <Routes>
           {/* Default landing page */}
-          <Route path="/" element={<Landing />} />
+          <Route path="/" element={<ErrorBoundary><Landing /></ErrorBoundary>} />
 
           {/* Auth routes */}
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
+          <Route path="/login" element={<ErrorBoundary><Login /></ErrorBoundary>} />
+          <Route path="/register" element={<ErrorBoundary><Register /></ErrorBoundary>} />
 
           {/* Protected dashboard route */}
           <Route
             path="/dashboard"
             element={
               <PrivateRoute>
-                <ErrorBoundary>
-                  <Dashboard />
-                </ErrorBoundary>
+                <ErrorBoundary><Dashboard /></ErrorBoundary>
               </PrivateRoute>
             }
           />
 
           {/* Catch-all for unknown routes */}
-          <Route path="*" element={<NotFound />} />
+          <Route path="*" element={<ErrorBoundary><NotFound /></ErrorBoundary>} />
         </Routes>
       </Router>
     </div>
