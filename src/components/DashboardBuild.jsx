@@ -110,11 +110,11 @@ const DashboardBuild = forwardRef((props, ref) => {
             </div>
           </div>
 
-          <div className="flex-1 bg-white dark:bg-gray-800 rounded-lg shadow-md p-4 sm:p-6">
+          {/* <div className="flex-1 bg-white dark:bg-gray-800 rounded-lg shadow-md p-4 sm:p-6">
             <div className="w-full h-72">
               <DonutChart budgetTables={safeBudgetTables} totalSalary={totalSalary} />
             </div>
-          </div>
+          </div> */}
         </div>
 
         {/* Categories */}
