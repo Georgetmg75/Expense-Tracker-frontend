@@ -8,14 +8,15 @@ const API = axios.create({
   withCredentials: true,
 });
 
-// ✅ Attach token to every request
-API.interceptors.request.use((req) => {
+// AUTO-ADD TOKEN
+API.interceptors.request.use((config) => {
   const token = localStorage.getItem('token');
   if (token) {
-    req.headers.Authorization = `Bearer ${token}`;
+    config.headers.Authorization = `Bearer ${token}`;
   }
-  return req;
+  return config;
 });
+
 
 // ✅ Log errors globally
 API.interceptors.response.use(

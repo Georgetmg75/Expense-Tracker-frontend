@@ -1,3 +1,4 @@
+// src/pages/Dashboard.jsx
 import { useEffect, useState, useRef } from 'react';
 import API from '../services/api';
 import DashboardBuild from '../components/DashboardBuild';
@@ -29,15 +30,18 @@ export default function Dashboard() {
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [categoryBudgetInput, setCategoryBudgetInput] = useState('');
 
+  // SET USER FROM LOCALSTORAGE
   useEffect(() => {
-    const user = JSON.parse(localStorage.getItem('user') || '{}');
-    console.log('DASHBOARD USER:', user);
-    console.log('userId:', user._id);
-
+    const storedUser = localStorage.getItem('user');
+    if (storedUser) {
+      const parsed = JSON.parse(storedUser);
+      setUser({ name: parsed.name || parsed.email?.split('@')[0], avatar: parsed.avatar || '/logo.jpg' });
+    }
     fetchTransactions();
     fetchDashboard();
   }, []);
 
+  // FETCH DASHBOARD
   const fetchDashboard = async () => {
     try {
       const res = await API.get('/api/dashboard');
@@ -45,175 +49,70 @@ export default function Dashboard() {
       const normalized = {};
       const initialForms = {};
 
-      for (const category in raw) {
-        normalized[category] = {
-          budget: raw[category].budget || 0,
-          expenses: Array.isArray(raw[category].expenses) ? raw[category].expenses : []
+      for (const cat in raw) {
+        normalized[cat] = {
+          budget: Number(raw[cat].budget) || 0,
+          expenses: Array.isArray(raw[cat].expenses) ? raw[cat].expenses : []
         };
-        initialForms[category] = { date: '', note: '', amount: '' };
+        initialForms[cat] = { date: '', note: '', amount: '' };
       }
 
-      setTotalSalary(res.data.totalSalary || 0);
+      setTotalSalary(Number(res.data.totalSalary) || 0);
       setBudgetTables(normalized);
       setExpenseForms(initialForms);
+      toast.success('Dashboard loaded!');
     } catch (err) {
-      console.error('Failed to load dashboard:', err.message);
+      console.error('Load failed:', err);
       toast.error('Failed to load dashboard');
     }
   };
 
-  useEffect(() => {
-    if (!loading) {
-      const timeout = setTimeout(() => {
-        saveDashboard();
-      }, 500);
-
-      return () => clearTimeout(timeout);
-    }
-  }, [budgetTables, totalSalary]);
-
+  // FETCH TRANSACTIONS
   const fetchTransactions = async () => {
     try {
       const res = await API.get('/api/transactions');
-      setTransactions(res.data);
+      setTransactions(Array.isArray(res.data) ? res.data : []);
     } catch (err) {
-      console.error('Transaction fetch failed:', err.message);
-      toast.error('Failed to fetch transactions');
+      console.error('Transactions failed:', err);
+      toast.error('Failed to load transactions');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleCategoryClick = (categoryName) => {
-    setSelectedCategory(categoryName);
-    setCategoryBudgetInput(budgetTables[categoryName]?.budget?.toString() || '');
-    setTimeout(() => {
-      dashboardRef.current?.scrollToBudget();
-    }, 100);
-  };
-
-  const handleSetCategoryBudget = () => {
-    const value = parseInt(categoryBudgetInput);
-    if (!isNaN(value)) {
-      setBudgetTables(prev => ({
-        ...prev,
-        [selectedCategory]: {
-          budget: value,
-          expenses: prev[selectedCategory]?.expenses || []
-        }
-      }));
-      setExpenseForms(prev => ({
-        ...prev,
-        [selectedCategory]: prev[selectedCategory] || { date: '', note: '', amount: '' }
-      }));
-      toast.success(`Budget set for ${selectedCategory}`);
-      setSelectedCategory(null);
-      setCategoryBudgetInput('');
-    }
-  };
-
-  const handleDeleteCategoryBudget = (category) => {
-    const updated = { ...budgetTables };
-    delete updated[category];
-    setBudgetTables(updated);
-    toast.success(`Deleted budget for ${category}`);
-  };
-
-  const handleExpenseChange = (category, field, value) => {
-    setExpenseForms(prev => ({
-      ...prev,
-      [category]: {
-        ...prev[category],
-        [field]: value
-      }
-    }));
-  };
-
-  const handleExpenseAdd = (e, category) => {
-    e.preventDefault();
-    const form = expenseForms[category] || { date: '', note: '', amount: '' };
-    const newExpense = {
-      date: form.date,
-      note: form.note,
-      amount: parseInt(form.amount)
-    };
-    setBudgetTables(prev => ({
-      ...prev,
-      [category]: {
-        ...prev[category],
-        expenses: [...prev[category].expenses, newExpense]
-      }
-    }));
-    setExpenseForms(prev => ({
-      ...prev,
-      [category]: { date: '', note: '', amount: '' }
-    }));
-    toast.success(`Expense added to ${category}`);
-  };
-
-  const updateExpenseField = (category, index, field, value) => {
-    setBudgetTables(prev => {
-      const updatedExpenses = [...prev[category].expenses];
-      updatedExpenses[index] = {
-        ...updatedExpenses[index],
-        [field]: field === 'amount' ? parseInt(value) : value
-      };
-      return {
-        ...prev,
-        [category]: {
-          ...prev[category],
-          expenses: updatedExpenses
-        }
-      };
-    });
-  };
-
-  const handleDeleteExpense = (category, index) => {
-    setBudgetTables(prev => {
-      const updatedExpenses = [...prev[category].expenses];
-      updatedExpenses.splice(index, 1);
-      return {
-        ...prev,
-        [category]: {
-          ...prev[category],
-          expenses: updatedExpenses
-        }
-      };
-    });
-    toast.success(`Expense deleted from ${category}`);
-  };
-
-  // AUTO-SAVE WITH userId (ObjectId string)
-  const handleLogin = async (e) => {
-    e.preventDefault();
-    setLoading(true);
+  // AUTO-SAVE FUNCTION — DEFINED HERE
+  const saveDashboard = async () => {
+    if (loading) return;
 
     try {
-      const res = await API.post('/api/auth/login', { email, password });
-      const { token, user } = res.data;
+      const storedUser = localStorage.getItem('user');
+      if (!storedUser) return;
 
-      localStorage.setItem('token', token);
-      localStorage.setItem('user', JSON.stringify({
-        ...user,
-        _id: user._id || user.id,
-        name: user.name || email.split('@')[0]
-      }));
+      const userData = JSON.parse(storedUser);
+      const userId = userData._id;
 
-      console.log('LOGIN SUCCESS → userId:', user._id);
-      toast.success('Welcome back, Boss!'); // NOW WORKS
+      if (!userId) {
+        toast.error('userId missing!');
+        return;
+      }
 
-      navigate('/dashboard');
+      console.log('SAVING DASHBOARD → userId:', userId);
+      await API.post('/api/dashboard', {
+        userId,
+        totalSalary,
+        budgetTables
+      });
+      toast.success('Auto-saved!');
     } catch (err) {
-      const message = err.response?.data?.message || 'Login failed';
-      toast.error(message); // NOW WORKS
-    } finally {
-      setLoading(false);
+      console.error('SAVE FAILED:', err.response?.data || err);
+      toast.error('Auto-save failed');
     }
   };
 
   // DEBOUNCED AUTO-SAVE
   useEffect(() => {
     if (loading) return;
+
     const timer = setTimeout(saveDashboard, 1500);
     return () => clearTimeout(timer);
   }, [totalSalary, budgetTables]);
@@ -226,7 +125,108 @@ export default function Dashboard() {
       window.removeEventListener('beforeunload', saveOnExit);
       saveOnExit();
     };
-  }, [totalSalary, budgetTables]);
+  }, []);
+
+  // HANDLERS
+  const handleCategoryClick = (categoryName) => {
+    setSelectedCategory(categoryName);
+    setCategoryBudgetInput(budgetTables[categoryName]?.budget?.toString() || '');
+    setTimeout(() => dashboardRef.current?.scrollToBudget?.(), 100);
+  };
+
+  const handleSetCategoryBudget = () => {
+    const value = parseFloat(categoryBudgetInput);
+    if (isNaN(value) || value < 0) {
+      toast.error('Invalid budget');
+      return;
+    }
+    setBudgetTables(prev => ({
+      ...prev,
+      [selectedCategory]: {
+        budget: value,
+        expenses: prev[selectedCategory]?.expenses || []
+      }
+    }));
+    toast.success(`Budget set: ₹${value}`);
+    setSelectedCategory(null);
+    setCategoryBudgetInput('');
+  };
+
+  const handleDeleteCategoryBudget = (category) => {
+    setBudgetTables(prev => {
+      const updated = { ...prev };
+      delete updated[category];
+      return updated;
+    });
+    toast.success(`Deleted ${category}`);
+  };
+
+  const handleExpenseChange = (category, field, value) => {
+    setExpenseForms(prev => ({
+      ...prev,
+      [category]: { ...prev[category], [field]: value }
+    }));
+  };
+
+  const handleExpenseAdd = (e, category) => {
+    e.preventDefault();
+    const form = expenseForms[category] || {};
+    if (!form.date || !form.note || !form.amount) {
+      toast.error('Fill all fields');
+      return;
+    }
+    const amount = parseFloat(form.amount);
+    if (isNaN(amount) || amount <= 0) {
+      toast.error('Invalid amount');
+      return;
+    }
+
+    setBudgetTables(prev => ({
+      ...prev,
+      [category]: {
+        ...prev[category],
+        expenses: [...(prev[category]?.expenses || []), { date: form.date, note: form.note, amount }]
+      }
+    }));
+    setExpenseForms(prev => ({
+      ...prev,
+      [category]: { date: '', note: '', amount: '' }
+    }));
+    toast.success('Expense added!');
+  };
+
+  const updateExpenseField = (category, index, field, value) => {
+    setBudgetTables(prev => {
+      const expenses = [...(prev[category]?.expenses || [])];
+      expenses[index] = {
+        ...expenses[index],
+        [field]: field === 'amount' ? parseFloat(value) || 0 : value
+      };
+      return {
+        ...prev,
+        [category]: { ...prev[category], expenses }
+      };
+    });
+  };
+
+  const handleDeleteExpense = (category, index) => {
+    setBudgetTables(prev => {
+      const expenses = (prev[category]?.expenses || []).filter((_, i) => i !== index);
+      return {
+        ...prev,
+        [category]: { ...prev[category], expenses }
+      };
+    });
+    toast.success('Expense deleted');
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-gray-100">
+        <div className="text-2xl font-bold animate-pulse">Loading...</div>
+      </div>
+    );
+  }
 
   return (
     <div className="bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-100 min-h-screen transition-colors duration-300 px-4 sm:px-6">
