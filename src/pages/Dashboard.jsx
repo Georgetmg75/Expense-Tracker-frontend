@@ -187,39 +187,46 @@ export default function Dashboard() {
     toast.success(`Expense deleted from ${category}`);
   };
 
-  // ✅ AUTO-SAVE — NO BUTTONS, NO MERCY
+  // AUTO-SAVE WITH userId (ObjectId string)
   const saveDashboard = async () => {
     try {
-      const storedUser = JSON.parse(localStorage.getItem('user') || '{}');
-      const userId = storedUser._id || storedUser.id;
+      // GET userId FROM LOCALSTORAGE (MUST BE _id FROM JWT)
+      const storedUser = localStorage.getItem('user');
+      if (!storedUser) {
+        toast.error('No user data!');
+        return;
+      }
+      const userData = JSON.parse(storedUser);
+      const userId = userData._id; // MUST BE STRING LIKE "670b1a2b3e4f567890123456"
 
       if (!userId) {
-        console.warn('No userId — skipping save');
+        toast.error('userId missing!');
         return;
       }
 
-      console.log('AUTO-SAVING DASHBOARD FOR userId:', userId);
-      await API.post('/api/dashboard', {
-        userId,
+      console.log('SAVING FOR userId:', userId);
+      const response = await API.post('/api/dashboard', {
+        userId, // SEND AS STRING
         totalSalary,
         budgetTables
       });
-      toast.success('Auto-saved!');
+
+      toast.success('Dashboard SAVED!');
+      console.log('SAVED:', response.data);
     } catch (err) {
-      console.error('AUTO-SAVE FAILED:', err.response?.data || err.message);
-      toast.error('Auto-save failed');
+      console.error('SAVE ERROR:', err.response?.data || err);
+      toast.error(err.response?.data?.message || 'Save failed');
     }
   };
 
-  // ✅ AUTO-SAVE ON CHANGE (every 2 seconds after edit)
+  // DEBOUNCED AUTO-SAVE
   useEffect(() => {
-    if (loading || !budgetTables || Object.keys(budgetTables).length === 0) return;
+    if (loading) return;
+    const timer = setTimeout(saveDashboard, 1500);
+    return () => clearTimeout(timer);
+  }, [totalSalary, budgetTables]);
 
-    const timeout = setTimeout(saveDashboard, 2000); // 2-sec debounce
-    return () => clearTimeout(timeout);
-  }, [totalSalary, budgetTables, loading]);
-
-  // ✅ FINAL SAVE ON EXIT
+  // SAVE ON EXIT
   useEffect(() => {
     const saveOnExit = () => saveDashboard();
     window.addEventListener('beforeunload', saveOnExit);
