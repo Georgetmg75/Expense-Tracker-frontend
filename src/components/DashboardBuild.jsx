@@ -8,7 +8,6 @@ import ExpenseTable from './ExpenseTable';
 import CategoryBudgetEditor from './CategoryBudgetEditor';
 import Navbar from './Navbar';
 import toast from 'react-hot-toast';
-import PropTypes from 'prop-types';
 
 const DashboardBuild = forwardRef(({
   user = { name: 'User', avatar: '/logo.jpg' },
@@ -40,7 +39,7 @@ const DashboardBuild = forwardRef(({
     }
   }));
 
-  // SAFE CALCULATIONS
+  // Safe data access
   const safeBudgetTables = budgetTables || {};
   const totalExpenses = Object.values(safeBudgetTables).reduce((sum, cat) => {
     if (!cat || !Array.isArray(cat.expenses)) return sum;
@@ -51,7 +50,7 @@ const DashboardBuild = forwardRef(({
 
   const handleAddBudget = () => {
     if (!selectedCategory || !categoryBudgetInput) {
-      toast.error('Enter a budget amount');
+      toast.error('Please enter a budget amount');
       return;
     }
     handleSetCategoryBudget();
@@ -63,11 +62,11 @@ const DashboardBuild = forwardRef(({
     toast.success(`Budget deleted for ${category}`);
   };
 
-  // SAFE RENDER GUARD
+  // Loading state
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-gray-100">
-        <div className="text-2xl font-bold animate-pulse">Loading Your Dashboard...</div>
+        <div className="text-2xl font-bold animate-pulse">Loading Dashboard...</div>
       </div>
     );
   }
@@ -77,9 +76,9 @@ const DashboardBuild = forwardRef(({
       <Navbar user={user} />
 
       <div className="min-h-screen bg-gray-100 dark:bg-gray-900 px-4 py-6 sm:px-6 font-sans text-gray-800 dark:text-gray-100 transition-colors duration-300 flex flex-col gap-8">
-        {/* Top Section */}
+        
+        {/* Top: Salary + Chart */}
         <div className="flex flex-col md:flex-row gap-6">
-          {/* Salary Editor */}
           <div className="flex-1 bg-white dark:bg-gray-800 rounded-lg shadow-md p-4 sm:p-6 flex flex-col gap-6">
             <SalaryEditor
               totalSalary={totalSalary}
@@ -87,7 +86,7 @@ const DashboardBuild = forwardRef(({
               budgetTables={safeBudgetTables}
             />
 
-            <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="bg-gray-50 dark:bg-gray-700 border rounded-lg p-4 text-center shadow-sm">
                 <p className="text-sm text-gray-500 dark:text-gray-300">Total Expenses</p>
                 <p className="text-lg font-semibold text-red-600">₹{totalExpenses}</p>
@@ -101,7 +100,6 @@ const DashboardBuild = forwardRef(({
             </div>
           </div>
 
-          {/* Donut Chart */}
           <div className="flex-1 bg-white dark:bg-gray-800 rounded-lg shadow-md p-4 sm:p-6">
             <div className="w-full h-72">
               <DonutChart budgetTables={safeBudgetTables} totalSalary={totalSalary} />
@@ -109,12 +107,9 @@ const DashboardBuild = forwardRef(({
           </div>
         </div>
 
-        {/* Category Grid */}
+        {/* Categories */}
         <div className="flex flex-col items-center gap-6">
-          <CategoryGrid 
-            categories={categories} 
-            onClick={handleCategoryClick} 
-          />
+          <CategoryGrid categories={categories} onClick={handleCategoryClick} />
 
           {selectedCategory && (
             <div ref={budgetRef} className="max-w-md w-full bg-white dark:bg-gray-800 p-4 rounded shadow">
@@ -138,11 +133,11 @@ const DashboardBuild = forwardRef(({
           )}
         </div>
 
-        {/* Expense Tables */}
+        {/* Expense Sections */}
         <div className="w-full max-w-4xl flex flex-col gap-6">
           {Object.entries(safeBudgetTables).length === 0 ? (
             <div className="text-center py-10">
-              <p className="text-gray-500">No budgets set yet. Click a category to start!</p>
+              <p className="text-gray-500">Click a category to set a budget and start tracking!</p>
             </div>
           ) : (
             Object.entries(safeBudgetTables).map(([category, data]) => (
@@ -218,30 +213,6 @@ const DashboardBuild = forwardRef(({
     </>
   );
 });
-
-// PROP TYPES + DEFAULTS
-DashboardBuild.propTypes = {
-  user: PropTypes.object,
-  categories: PropTypes.array,
-  budgetTables: PropTypes.object,
-  totalSalary: PropTypes.number,
-  setTotalSalary: PropTypes.func,
-  selectedCategory: PropTypes.string,
-  categoryBudgetInput: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
-  setCategoryBudgetInput: PropTypes.func,
-  handleSetCategoryBudget: PropTypes.func,
-  handleCategoryClick: PropTypes.func,
-  handleDeleteCategoryBudget: PropTypes.func,
-  expenseForms: PropTypes.object,
-  handleExpenseChange: PropTypes.func,
-  handleExpenseAdd: PropTypes.func,
-  editState: PropTypes.object,
-  setEditState: PropTypes.func,
-  updateExpenseField: PropTypes.func,
-  handleDeleteExpense: PropTypes.func,
-  transactions: PropTypes.array,
-  loading: PropTypes.bool,
-};
 
 DashboardBuild.displayName = 'DashboardBuild';
 
