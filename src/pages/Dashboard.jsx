@@ -58,7 +58,7 @@ export default function Dashboard() {
       }
 
       setTotalSalary(Number(res.data.totalSalary) || 0);
-      setBudgetTables(normalized);
+      setBudgetTables(normalized?.toObject?.() || normalized);
       setExpenseForms(initialForms);
       toast.success('Dashboard loaded!');
     } catch (err) {
