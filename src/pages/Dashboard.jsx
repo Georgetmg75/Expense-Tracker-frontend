@@ -44,7 +44,7 @@ export default function Dashboard() {
 
   const fetchDashboard = async () => {
     try {
-      const res = await API.get('/dashboard');
+      const res = await API.get('/api/dashboard');
       const raw = res.data.budgetTables || {};
       const normalized = {};
       const initialForms = {};
@@ -78,7 +78,7 @@ export default function Dashboard() {
 
   const fetchTransactions = async () => {
     try {
-      const res = await API.get('/transactions');
+      const res = await API.get('/api/transactions');
       setTransactions(res.data);
     } catch (err) {
       console.error('Transaction fetch failed:', err.message);
@@ -190,7 +190,7 @@ export default function Dashboard() {
   // ✅ Manual save function
   const saveDashboard = async () => {
     try {
-      await API.post('/dashboard', { totalSalary, budgetTables });
+      await API.post('/api/dashboard', { totalSalary, budgetTables });
       toast.success('Dashboard saved!');
     } catch (err) {
       console.error('Failed to save dashboard:', err.message);

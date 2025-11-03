@@ -24,7 +24,7 @@ export default function TransactionForm({ onAdd }) {
     };
 
     try {
-      const res = await API.post('/transactions', payload);
+      const res = await API.post('/api/transactions', payload);
       toast.success('Transaction saved!');
       setForm({ date: '', note: '', amount: '' });
       if (onAdd) onAdd(res.data); // optional callback to update parent
