@@ -18,7 +18,7 @@ const categories = [
 ];
 
 export default function Dashboard() {
-  const dashboardRef = useRef(null);
+  const dashboardRef = useRef({ scrollToBudget: () => window.scrollTo(0, 500) });
 
   const [user, setUser] = useState({ name: 'User', avatar: '/logo.jpg' });
   const [transactions, setTransactions] = useState([]);

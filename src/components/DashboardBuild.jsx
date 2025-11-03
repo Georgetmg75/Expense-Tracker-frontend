@@ -1,3 +1,4 @@
+// src/components/DashboardBuild.jsx
 import { useRef, forwardRef, useImperativeHandle } from 'react';
 import DonutChart from './DonutChart';
 import SalaryEditor from './SalaryEditor';
@@ -7,57 +8,69 @@ import ExpenseTable from './ExpenseTable';
 import CategoryBudgetEditor from './CategoryBudgetEditor';
 import Navbar from './Navbar';
 import toast from 'react-hot-toast';
+import PropTypes from 'prop-types';
 
 const DashboardBuild = forwardRef(({
-  user,
-  categories,
-  budgetTables,
-  totalSalary,
-  setTotalSalary,
-  selectedCategory,
-  categoryBudgetInput,
-  setCategoryBudgetInput,
-  handleSetCategoryBudget,
-  handleCategoryClick,
-  handleDeleteCategoryBudget,
-  expenseForms,
-  handleExpenseChange,
-  handleExpenseAdd,
-  editState,
-  setEditState,
-  updateExpenseField,
-  handleDeleteExpense,
-  transactions,
-  loading
+  user = { name: 'User', avatar: '/logo.jpg' },
+  categories = [],
+  budgetTables = {},
+  totalSalary = 0,
+  setTotalSalary = () => {},
+  selectedCategory = null,
+  categoryBudgetInput = '',
+  setCategoryBudgetInput = () => {},
+  handleSetCategoryBudget = () => {},
+  handleCategoryClick = () => {},
+  handleDeleteCategoryBudget = () => {},
+  expenseForms = {},
+  handleExpenseChange = () => {},
+  handleExpenseAdd = () => {},
+  editState = { category: null, index: null },
+  setEditState = () => {},
+  updateExpenseField = () => {},
+  handleDeleteExpense = () => {},
+  transactions = [],
+  loading = false
 }, ref) => {
   const budgetRef = useRef(null);
 
   useImperativeHandle(ref, () => ({
     scrollToBudget: () => {
-      if (budgetRef.current) {
-        budgetRef.current.scrollIntoView({ behavior: 'smooth' });
-      }
+      budgetRef.current?.scrollIntoView({ behavior: 'smooth' });
     }
   }));
 
-  const totalExpenses = Object.values(budgetTables).reduce((sum, category) => {
-    const categoryTotal = Array.isArray(category.expenses)
-      ? category.expenses.reduce((acc, exp) => acc + (exp.amount || 0), 0)
-      : 0;
-    return sum + categoryTotal;
+  // SAFE CALCULATIONS
+  const safeBudgetTables = budgetTables || {};
+  const totalExpenses = Object.values(safeBudgetTables).reduce((sum, cat) => {
+    if (!cat || !Array.isArray(cat.expenses)) return sum;
+    return sum + cat.expenses.reduce((acc, exp) => acc + (Number(exp.amount) || 0), 0);
   }, 0);
 
   const remainingBalance = totalSalary - totalExpenses;
 
   const handleAddBudget = () => {
+    if (!selectedCategory || !categoryBudgetInput) {
+      toast.error('Enter a budget amount');
+      return;
+    }
     handleSetCategoryBudget();
-    toast.success(`Budget added for ${selectedCategory}`);
+    toast.success(`Budget set for ${selectedCategory}!`);
   };
 
   const handleDeleteBudget = (category) => {
     handleDeleteCategoryBudget(category);
-    toast.success(`Deleted budget for ${category}`);
+    toast.success(`Budget deleted for ${category}`);
   };
+
+  // SAFE RENDER GUARD
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-gray-100">
+        <div className="text-2xl font-bold animate-pulse">Loading Your Dashboard...</div>
+      </div>
+    );
+  }
 
   return (
     <>
@@ -71,7 +84,7 @@ const DashboardBuild = forwardRef(({
             <SalaryEditor
               totalSalary={totalSalary}
               setTotalSalary={setTotalSalary}
-              budgetTables={budgetTables}
+              budgetTables={safeBudgetTables}
             />
 
             <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -81,7 +94,9 @@ const DashboardBuild = forwardRef(({
               </div>
               <div className={`border rounded-lg p-4 text-center shadow-sm ${remainingBalance < 0 ? 'bg-red-50 dark:bg-red-900' : 'bg-green-50 dark:bg-green-900'}`}>
                 <p className="text-sm text-gray-500 dark:text-gray-300">Remaining Balance</p>
-                <p className={`text-lg font-semibold ${remainingBalance < 0 ? 'text-red-600' : 'text-green-600'}`}>₹{remainingBalance}</p>
+                <p className={`text-lg font-semibold ${remainingBalance < 0 ? 'text-red-600' : 'text-green-600'}`}>
+                  ₹{remainingBalance}
+                </p>
               </div>
             </div>
           </div>
@@ -89,14 +104,17 @@ const DashboardBuild = forwardRef(({
           {/* Donut Chart */}
           <div className="flex-1 bg-white dark:bg-gray-800 rounded-lg shadow-md p-4 sm:p-6">
             <div className="w-full h-72">
-              <DonutChart budgetTables={budgetTables} totalSalary={totalSalary} />
+              <DonutChart budgetTables={safeBudgetTables} totalSalary={totalSalary} />
             </div>
           </div>
         </div>
 
-        {/* Bottom Section */}
+        {/* Category Grid */}
         <div className="flex flex-col items-center gap-6">
-          <CategoryGrid categories={categories} onClick={handleCategoryClick} />
+          <CategoryGrid 
+            categories={categories} 
+            onClick={handleCategoryClick} 
+          />
 
           {selectedCategory && (
             <div ref={budgetRef} className="max-w-md w-full bg-white dark:bg-gray-800 p-4 rounded shadow">
@@ -110,24 +128,31 @@ const DashboardBuild = forwardRef(({
                   placeholder="Enter budget (₹)"
                 />
                 <button
-                  className="w-full sm:w-auto px-4 py-3 text-base bg-blue-600 text-white rounded hover:bg-blue-700 transition"
                   onClick={handleAddBudget}
+                  className="w-full sm:w-auto px-4 py-3 text-base bg-blue-600 text-white rounded hover:bg-blue-700 transition"
                 >
-                  Add
+                  Add Budget
                 </button>
               </div>
             </div>
           )}
+        </div>
 
-          <div className="w-full max-w-4xl flex flex-col gap-6">
-            {Object.entries(budgetTables).map(([category, data]) => (
+        {/* Expense Tables */}
+        <div className="w-full max-w-4xl flex flex-col gap-6">
+          {Object.entries(safeBudgetTables).length === 0 ? (
+            <div className="text-center py-10">
+              <p className="text-gray-500">No budgets set yet. Click a category to start!</p>
+            </div>
+          ) : (
+            Object.entries(safeBudgetTables).map(([category, data]) => (
               <div key={category} className="bg-white dark:bg-gray-800 shadow rounded p-4">
                 <h2 className="text-xl font-bold mb-4 flex justify-between items-center">
                   {category}
                   <CategoryBudgetEditor
                     category={category}
-                    budget={data.budget}
-                    onEdit={handleCategoryClick}
+                    budget={data?.budget || 0}
+                    onEdit={() => handleCategoryClick(category)}
                     onDelete={() => handleDeleteBudget(category)}
                   />
                 </h2>
@@ -141,8 +166,8 @@ const DashboardBuild = forwardRef(({
                 <ExpenseTable
                   category={category}
                   data={{
-                    ...data,
-                    expenses: Array.isArray(data.expenses) ? data.expenses : []
+                    budget: data?.budget || 0,
+                    expenses: Array.isArray(data?.expenses) ? data.expenses : []
                   }}
                   isEditing={editState.category === category}
                   editIndex={editState.index}
@@ -153,47 +178,35 @@ const DashboardBuild = forwardRef(({
                   onFieldChange={(index, field, value) => updateExpenseField(category, index, field, value)}
                 />
               </div>
-            ))}
-          </div>
+            ))
+          )}
         </div>
 
-        {/* Transaction Table */}
+        {/* Transactions */}
         <div className="mt-8 overflow-x-auto">
-          {loading ? (
-            <p className="text-center text-gray-500 dark:text-gray-300">Loading transactions...</p>
-          ) : transactions.length === 0 ? (
-            <div className="bg-white dark:bg-gray-800 shadow rounded p-4">
-              <p className="text-gray-600 dark:text-gray-300">No transactions found.</p>
-            </div>
+          <h2 className="text-2xl font-bold mb-4">Recent Transactions</h2>
+          {transactions.length === 0 ? (
+            <p className="text-center text-gray-500">No transactions yet. Add your first expense!</p>
           ) : (
-            <div className="bg-white dark:bg-gray-800 shadow rounded p-4">
-              <table className="w-full table-auto text-sm sm:text-base">
-                <thead>
-                  <tr className="bg-gray-200 dark:bg-gray-700 text-left">
-                    <th className="px-4 py-2">Date</th>
-                    <th className="px-4 py-2">Category</th>
-                    <th className="px-4 py-2">Amount</th>
-                    <th className="px-4 py-2">Actions</th>
+            <div className="bg-white dark:bg-gray-800 shadow rounded overflow-hidden">
+              <table className="w-full text-sm sm:text-base">
+                <thead className="bg-gray-200 dark:bg-gray-700">
+                  <tr>
+                    <th className="px-4 py-3 text-left">Date</th>
+                    <th className="px-4 py-3 text-left">Category</th>
+                    <th className="px-4 py-3 text-left">Note</th>
+                    <th className="px-4 py-3 text-left">Amount</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {transactions.map(tx => (
-                    <tr key={tx._id} className="border-t border-gray-300 dark:border-gray-600">
-                      <td className="px-4 py-2">
-                        {tx.date
-                          ? new Date(tx.date).toLocaleDateString('en-IN', {
-                              day: '2-digit',
-                              month: 'short',
-                              year: 'numeric'
-                            })
-                          : '-'}
+                  {transactions.map((tx) => (
+                    <tr key={tx._id} className="border-t border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700">
+                      <td className="px-4 py-3">
+                        {tx.date ? new Date(tx.date).toLocaleDateString('en-IN') : '-'}
                       </td>
-                      <td className="px-4 py-2">{tx.category}</td>
-                      <td className="px-4 py-2">₹{tx.amount}</td>
-                      <td className="px-4 py-2">
-                        <button className="text-blue-600 hover:underline mr-2">Edit</button>
-                        <button className="text-red-600 hover:underline">Delete</button>
-                      </td>
+                      <td className="px-4 py-3">{tx.category || 'Uncategorized'}</td>
+                      <td className="px-4 py-3">{tx.note || '-'}</td>
+                      <td className="px-4 py-3 font-semibold text-red-600">₹{tx.amount}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -205,5 +218,31 @@ const DashboardBuild = forwardRef(({
     </>
   );
 });
+
+// PROP TYPES + DEFAULTS
+DashboardBuild.propTypes = {
+  user: PropTypes.object,
+  categories: PropTypes.array,
+  budgetTables: PropTypes.object,
+  totalSalary: PropTypes.number,
+  setTotalSalary: PropTypes.func,
+  selectedCategory: PropTypes.string,
+  categoryBudgetInput: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+  setCategoryBudgetInput: PropTypes.func,
+  handleSetCategoryBudget: PropTypes.func,
+  handleCategoryClick: PropTypes.func,
+  handleDeleteCategoryBudget: PropTypes.func,
+  expenseForms: PropTypes.object,
+  handleExpenseChange: PropTypes.func,
+  handleExpenseAdd: PropTypes.func,
+  editState: PropTypes.object,
+  setEditState: PropTypes.func,
+  updateExpenseField: PropTypes.func,
+  handleDeleteExpense: PropTypes.func,
+  transactions: PropTypes.array,
+  loading: PropTypes.bool,
+};
+
+DashboardBuild.displayName = 'DashboardBuild';
 
 export default DashboardBuild;
