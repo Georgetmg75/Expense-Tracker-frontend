@@ -89,3 +89,4 @@ export default function DonutChart({ budgetTables = {}, totalSalary = 0 }) {
     </div>
   );
 }
+////
