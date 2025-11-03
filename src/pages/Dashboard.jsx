@@ -201,36 +201,44 @@ export default function Dashboard() {
   };
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen bg-gray-100">
-        <div className="text-2xl font-bold animate-pulse">Loading...</div>
-      </div>
-    );
+    return <div className="flex items-center justify-center min-h-screen bg-gray-100">
+      <div className="text-2xl font-bold animate-pulse">Loading...</div>
+    </div>;
   }
 
+
   return (
-    <DashboardBuild
-      ref={dashboardRef}
-      user={user}
-      categories={categories}
-      budgetTables={budgetTables}
-      totalSalary={totalSalary}
-      setTotalSalary={setTotalSalary}
-      selectedCategory={selectedCategory}
-      categoryBudgetInput={categoryBudgetInput}
-      setCategoryBudgetInput={setCategoryBudgetInput}
-      handleSetCategoryBudget={handleSetCategoryBudget}
-      handleCategoryClick={handleCategoryClick}
-      handleDeleteCategoryBudget={handleDeleteCategoryBudget}
-      expenseForms={expenseForms}
-      handleExpenseChange={handleExpenseChange}
-      handleExpenseAdd={handleExpenseAdd}
-      editState={editState}
-      setEditState={setEditState}
-      updateExpenseField={updateExpenseField}
-      handleDeleteExpense={handleDeleteExpense}
-      transactions={transactions}
-      loading={loading}
-    />
+    <div className="min-h-screen">
+      {/* ERROR BOUNDARY AROUND DASHBOARD BUILD */}
+      <ErrorBoundary fallback={<div className="p-10 text-red-600">Dashboard Crashed! Check console.</div>}>
+        <DashboardBuild
+          ref={dashboardRef}
+          user={user}
+          categories={categories}
+          budgetTables={budgetTables}
+          totalSalary={totalSalary}
+          setTotalSalary={setTotalSalary}
+          selectedCategory={selectedCategory}
+          categoryBudgetInput={categoryBudgetInput}
+          setCategoryBudgetInput={setCategoryBudgetInput}
+          handleSetCategoryBudget={handleSetCategoryBudget}
+          handleCategoryClick={(cat) => {
+            setSelectedCategory(cat);
+            setCategoryBudgetInput(budgetTables[cat]?.budget?.toString() || '');
+            setTimeout(() => dashboardRef.current?.scrollToBudget?.(), 100);
+          }}
+          handleDeleteCategoryBudget={handleDeleteCategoryBudget}
+          expenseForms={expenseForms}
+          handleExpenseChange={handleExpenseChange}
+          handleExpenseAdd={handleExpenseAdd}
+          editState={editState}
+          setEditState={setEditState}
+          updateExpenseField={updateExpenseField}
+          handleDeleteExpense={handleDeleteExpense}
+          transactions={transactions}
+          loading={loading}
+        />
+      </ErrorBoundary>
+    </div>
   );
 }

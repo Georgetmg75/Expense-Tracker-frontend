@@ -6,7 +6,6 @@ import ErrorBoundary from './components/ErrorBoundary';
 import Landing from './pages/Landing';
 import Login from './pages/Login';
 import Register from './pages/Register';
-import TestDashboard from './pages/TestDashboard';
 import Dashboard from './pages/Dashboard';
 import NotFound from './pages/NotFound';
 import PrivateRoute from './components/PrivateRoute';
@@ -61,7 +60,7 @@ export default function App() {
             path="/dashboard"
             element={
               <PrivateRoute>
-                <ErrorBoundary><TestDashboard /></ErrorBoundary>
+                <ErrorBoundary><Dashboard /></ErrorBoundary>
               </PrivateRoute>
             }
           />
