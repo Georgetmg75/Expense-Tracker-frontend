@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const apiBase = import.meta.env.VITE_API_URL || 'https://expense-tracker-flax-one-83.vercel.app';
+const apiBase = import.meta.env.VITE_API_URL;
 
 const API = axios.create({
   baseURL: apiBase,
