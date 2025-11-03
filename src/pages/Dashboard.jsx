@@ -30,12 +30,14 @@ export default function Dashboard() {
   const [categoryBudgetInput, setCategoryBudgetInput] = useState('');
 
   useEffect(() => {
-    const storedUser = JSON.parse(localStorage.getItem('user'));
-    if (storedUser?.name) {
-      setUser({
-        name: storedUser.name,
-        avatar: storedUser.avatar || '/logo.jpg'
-      });
+    const raw = localStorage.getItem('user');
+    console.log('RAW USER:', raw);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      console.log('PARSED USER:', parsed);
+      console.log('userId:', parsed._id || parsed.id);
+    } else {
+      console.error('NO USER IN LOCALSTORAGE!');
     }
 
     fetchTransactions();
