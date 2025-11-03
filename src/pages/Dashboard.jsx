@@ -49,17 +49,13 @@ export default function Dashboard() {
       const normalized = {};
       const initialForms = {};
 
-      for (const category in raw) {
-        const data = raw[category] || {};
-        const expenses = Array.isArray(data.expenses) ? data.expenses : [];
-
-        normalized[category] = {
-          budget: data.budget || 0,
-          expenses
+      for (const cat in raw) {
+        normalized[cat] = {
+          budget: Number(raw[cat].budget) || 0,
+          expenses: Array.isArray(raw[cat].expenses) ? raw[cat].expenses : []
         };
-        initialForms[category] = { date: '', note: '', amount: '' };
+        initialForms[cat] = { date: '', note: '', amount: '' };
       }
-
 
       setTotalSalary(Number(res.data.totalSalary) || 0);
       setBudgetTables(normalized);
