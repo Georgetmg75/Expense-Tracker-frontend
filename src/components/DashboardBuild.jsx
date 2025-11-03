@@ -1,5 +1,5 @@
 // src/components/DashboardBuild.jsx
-import { useRef, forwardRef, useImperativeHandle } from 'react';
+import { useRef, forwardRef, useImperativeHandle, useEffect } from 'react';
 import DonutChart from './DonutChart';
 import SalaryEditor from './SalaryEditor';
 import CategoryGrid from './CategoryGrid';
@@ -9,28 +9,37 @@ import CategoryBudgetEditor from './CategoryBudgetEditor';
 import Navbar from './Navbar';
 import toast from 'react-hot-toast';
 
-const DashboardBuild = forwardRef(({
-  user = { name: 'User', avatar: '/logo.jpg' },
-  categories = [],
-  budgetTables = {},
-  totalSalary = 0,
-  setTotalSalary = () => {},
-  selectedCategory = null,
-  categoryBudgetInput = '',
-  setCategoryBudgetInput = () => {},
-  handleSetCategoryBudget = () => {},
-  handleCategoryClick = () => {},
-  handleDeleteCategoryBudget = () => {},
-  expenseForms = {},
-  handleExpenseChange = () => {},
-  handleExpenseAdd = () => {},
-  editState = { category: null, index: null },
-  setEditState = () => {},
-  updateExpenseField = () => {},
-  handleDeleteExpense = () => {},
-  transactions = [],
-  loading = false
-}, ref) => {
+// DEBUG LOGS
+console.log('DashboardBuild component loaded');
+
+const DashboardBuild = forwardRef((props, ref) => {
+  useEffect(() => {
+    console.log('DashboardBuild PROPS:', props);
+  }, [props]);
+
+  const {
+    user = { name: 'User', avatar: '/logo.jpg' },
+    categories = [],
+    budgetTables = {},
+    totalSalary = 0,
+    setTotalSalary = () => {},
+    selectedCategory = null,
+    categoryBudgetInput = '',
+    setCategoryBudgetInput = () => {},
+    handleSetCategoryBudget = () => {},
+    handleCategoryClick = () => {},
+    handleDeleteCategoryBudget = () => {},
+    expenseForms = {},
+    handleExpenseChange = () => {},
+    handleExpenseAdd = () => {},
+    editState = { category: null, index: null },
+    setEditState = () => {},
+    updateExpenseField = () => {},
+    handleDeleteExpense = () => {},
+    transactions = [],
+    loading = false
+  } = props;
+
   const budgetRef = useRef(null);
 
   useImperativeHandle(ref, () => ({
@@ -39,7 +48,6 @@ const DashboardBuild = forwardRef(({
     }
   }));
 
-  // Safe data access
   const safeBudgetTables = budgetTables || {};
   const totalExpenses = Object.values(safeBudgetTables).reduce((sum, cat) => {
     if (!cat || !Array.isArray(cat.expenses)) return sum;
@@ -62,7 +70,6 @@ const DashboardBuild = forwardRef(({
     toast.success(`Budget deleted for ${category}`);
   };
 
-  // Loading state
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-gray-100">
@@ -209,11 +216,23 @@ const DashboardBuild = forwardRef(({
             </div>
           )}
         </div>
+
+        {/* DEBUG BUTTON */}
+        <div className="fixed bottom-4 right-4">
+          <button
+            onClick={() => {
+              console.log('FULL STATE:', { user, categories, budgetTables, transactions, totalSalary });
+              toast.success('Debug logged to console!');
+            }}
+            className="px-6 py-3 bg-purple-600 text-white rounded-full shadow-lg hover:bg-purple-700"
+          >
+            🔍 DEBUG
+          </button>
+        </div>
       </div>
     </>
   );
 });
 
 DashboardBuild.displayName = 'DashboardBuild';
-
 export default DashboardBuild;
