@@ -60,7 +60,9 @@ export default function App() {
             path="/dashboard"
             element={
               <PrivateRoute>
-                <Dashboard />
+                <ErrorBoundary>
+                  <Dashboard />
+                </ErrorBoundary>
               </PrivateRoute>
             }
           />
