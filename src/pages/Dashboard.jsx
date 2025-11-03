@@ -187,23 +187,47 @@ export default function Dashboard() {
     toast.success(`Expense deleted from ${category}`);
   };
 
-  // ✅ Manual save function
+  // ✅ AUTO-SAVE — NO BUTTONS, NO MERCY
   const saveDashboard = async () => {
     try {
-      await API.post('/api/dashboard', { totalSalary, budgetTables });
-      toast.success('Dashboard saved!');
+      const storedUser = JSON.parse(localStorage.getItem('user') || '{}');
+      const userId = storedUser._id || storedUser.id;
+
+      if (!userId) {
+        console.warn('No userId — skipping save');
+        return;
+      }
+
+      console.log('AUTO-SAVING DASHBOARD FOR userId:', userId);
+      await API.post('/api/dashboard', {
+        userId,
+        totalSalary,
+        budgetTables
+      });
+      toast.success('Auto-saved!');
     } catch (err) {
-      console.error('Failed to save dashboard:', err.message);
-      toast.error('Failed to save dashboard');
+      console.error('AUTO-SAVE FAILED:', err.response?.data || err.message);
+      toast.error('Auto-save failed');
     }
   };
 
-  // ✅ Save on unmount
+  // ✅ AUTO-SAVE ON CHANGE (every 2 seconds after edit)
   useEffect(() => {
+    if (loading || !budgetTables || Object.keys(budgetTables).length === 0) return;
+
+    const timeout = setTimeout(saveDashboard, 2000); // 2-sec debounce
+    return () => clearTimeout(timeout);
+  }, [totalSalary, budgetTables, loading]);
+
+  // ✅ FINAL SAVE ON EXIT
+  useEffect(() => {
+    const saveOnExit = () => saveDashboard();
+    window.addEventListener('beforeunload', saveOnExit);
     return () => {
-      saveDashboard();
+      window.removeEventListener('beforeunload', saveOnExit);
+      saveOnExit();
     };
-  }, []);
+  }, [totalSalary, budgetTables]);
 
   return (
     <div className="bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-100 min-h-screen transition-colors duration-300 px-4 sm:px-6">
