@@ -1,0 +1,38 @@
+How to Deploy this Project in 4 Importent Steps.
+
+Step 1
+Open MangodbAtlas webside https://cloud.mongodb.com/
+
+create a New Cluster and copy past that url in .env
+
+git add .
+git Commit -m "Added Mongourl"
+git push
+
+
+Now Deploy Backend File First in Vercel,while deploying it will ask for Environment variabls, add those two urls from (backend folder > .env file )  in Environment variabls Seperatly.
+
+After Deployment Copy That Deployed (Domain)Link and Past it inside Frontend .env file.
+
+git add .
+git Commit -m "Added backend link to Frontend"
+git push
+
+
+Then Deploy Frontend , while deploying it will ask for Environment variabls, add url from (Frontend folder > .env file)  in Environment variabls Seperatly.
+
+Step 2
+
+Now past that Frontend Deployed (Domain)Link in Backend folder > In App.js file , inside CORS SETUP  Replace the "old http:// link" with "Newly Deployed  (Domain)Link.
+
+git add .
+git Commit -m "Frontend URL added"
+git push
+
+Step 3
+
+Now ReDeploy the Current Backend Deployment, Dont Delete the Current Deployment because it will change Domain line insterd just Redeploy, to do that you go to vercel dashboard , selete backend project, on the top deployment nav bar select deployment , that will list the latest deployment , select the latest , it will take you to deployment page there on right corner , click on three dots ... like this and select ReDeploy.
+
+Step 4
+
+Now that both Frontend and Backend Are deployed , GO to Frontend and Click On Domain link, The Landing Page Opens , Click Get Started, It will Ask for Credencials , Just give fake Onces , and Dashboard Loads up. 
